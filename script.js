@@ -16,7 +16,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const subid = params.get("subid") || "defaultsubid";
 
   // Replace with your Monetizer click URL
-  const monetizerURL = "https://smartlink.monetizer.com/click?subid=" + encodeURIComponent(subid);
+  const monetizerURL = "https://aff.monymakers.online/?utm_medium=699ea686e41e07763bc6194758e6e659a4ad6a95&utm_campaign=ZeroP-PH-Mainstream&utm_term=" + encodeURIComponent(subid);
+
 
   btn.addEventListener("click", function () {
     window.location.href = monetizerURL;
