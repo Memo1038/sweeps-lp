@@ -9,3 +9,4 @@ const monetizerURL = "https://aff.monymakers.online/?utm_medium=699ea686e41e0776
 setTimeout(() => {
   window.location.href = monetizerURL;
 }, 500); // 500ms delay
+<script src="script.js?v=1.0.0"></script>
