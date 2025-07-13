@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DosiThink App</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4A90E2" />
   <style>
     * { box-sizing: border-box; }
     body {
@@ -23,6 +25,7 @@
       height: 100vh;
       overflow-y: auto;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      position: relative;
     }
     .screen {
       display: none;
@@ -32,12 +35,8 @@
     .screen.active {
       display: block;
     }
-    h1 {
-      color: #4A90E2;
-    }
-    p {
-      color: #607D8B;
-    }
+    h1 { color: #4A90E2; }
+    p { color: #607D8B; }
     button {
       margin: 10px 5px;
       padding: 10px 20px;
@@ -70,65 +69,64 @@
       right: 10px;
       font-size: 14px;
     }
+    #notification {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: #FFF8E1;
+      color: #009688;
+      border: 1px solid #009688;
+      padding: 10px;
+      border-radius: 5px;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="app-container">
     <button class="lang-toggle" onclick="toggleLanguage()">🌐</button>
-
-    <!-- Welcome -->
     <div class="screen active" id="screen-welcome">
       <h1 id="t-welcome">DosiThink</h1>
       <p id="t-language-select">Select your language:</p>
-      <button onclick="goToScreen('screen-role')">English</button>
-      <button onclick="goToScreen('screen-role')">العربية</button>
+      <button onclick="setLanguage('en')">English</button>
+      <button onclick="setLanguage('ar')">العربية</button>
     </div>
-
-    <!-- Role Selection -->
     <div class="screen" id="screen-role">
       <h1 id="t-role-select">Select Role</h1>
       <button onclick="setRole('patient')">I am a Patient</button>
       <button onclick="setRole('caregiver')">I am a Caregiver</button>
     </div>
-
-    <!-- Login -->
     <div class="screen" id="screen-login">
       <h1 id="t-login">Login</h1>
-      <input type="email" placeholder="Email">
-      <input type="password" placeholder="Password">
-      <button onclick="goToDashboard()">Login</button>
+      <input type="email" id="login-email" placeholder="Email">
+      <input type="password" id="login-password" placeholder="Password">
+      <button onclick="login()">Login</button>
       <p>or</p>
       <button onclick="goToScreen('screen-signup')">Create Account</button>
     </div>
-
-    <!-- Signup -->
     <div class="screen" id="screen-signup">
       <h1 id="t-signup">Sign Up</h1>
-      <input type="text" placeholder="Full Name">
-      <input type="email" placeholder="Email">
-      <input type="password" placeholder="Password">
-      <select>
+      <input type="text" id="signup-name" placeholder="Full Name">
+      <input type="email" id="signup-email" placeholder="Email">
+      <input type="password" id="signup-password" placeholder="Password">
+      <select id="signup-role">
         <option value="">Select Role</option>
         <option value="patient">Patient</option>
         <option value="caregiver">Caregiver</option>
       </select>
-      <button onclick="goToDashboard()">Sign Up</button>
+      <button onclick="signUp()">Sign Up</button>
     </div>
-
-    <!-- Patient Dashboard -->
     <div class="screen" id="screen-patient-dashboard">
-      <h1>My Medications</h1>
-      <div id="medication-list">
-        <!-- Dynamic meds appear here -->
-      </div>
-      <h2>Add Medication</h2>
+      <h1 id="t-my-meds">My Medications</h1>
+      <div id="medication-list"></div>
+      <h2 id="t-add-med">Add Medication</h2>
       <input type="text" id="medName" placeholder="Medication Name">
-      <input type="text" id="medTime" placeholder="Time (e.g. 08:00 AM)">
+      <input type="time" id="medTime">
+      <label><input type="checkbox" id="medDaily"> Repeat Daily</label>
       <button onclick="addMedication()">Add Medication</button>
       <button onclick="goToScreen('screen-login')">Log Out</button>
     </div>
-
-    <!-- Caregiver Dashboard -->
     <div class="screen" id="screen-caregiver-dashboard">
       <h1>Caregiver Panel</h1>
       <p>👩‍⚕️ Patient: Ahmed</p>
@@ -139,69 +137,116 @@
       <button onclick="goToScreen('screen-login')">Log Out</button>
     </div>
   </div>
-
+  <div id="notification"></div>
   <script>
     let currentRole = "patient";
     let currentLang = "en";
+    let users = [];
+    let medications = [];
 
     function goToScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
     }
-
+    function setLanguage(lang) {
+      currentLang = lang;
+      toggleLanguage();
+      goToScreen('screen-role');
+    }
     function setRole(role) {
       currentRole = role;
       goToScreen('screen-login');
     }
-
-    function goToDashboard() {
-      if (currentRole === 'patient') {
-        goToScreen('screen-patient-dashboard');
-      } else {
-        goToScreen('screen-caregiver-dashboard');
-      }
+    function signUp() {
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const pass = document.getElementById('signup-password').value.trim();
+      const role = document.getElementById('signup-role').value;
+      if (!name || !email || !pass || !role) return alert("Please fill all fields");
+      users.push({ email, pass, role });
+      currentRole = role;
+      goToScreen('screen-login');
     }
-
+    function login() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-password').value.trim();
+      const user = users.find(u => u.email === email && u.pass === pass);
+      if (!user) return alert("Invalid credentials");
+      currentRole = user.role;
+      goToDashboard();
+    }
+    function goToDashboard() {
+      goToScreen(currentRole === 'patient' ? 'screen-patient-dashboard' : 'screen-caregiver-dashboard');
+    }
     function toggleLanguage() {
-      currentLang = currentLang === "en" ? "ar" : "en";
-      const textMap = {
+      const map = {
         en: {
-          "t-welcome": "DosiThink",
-          "t-language-select": "Select your language:",
-          "t-role-select": "Select Role",
-          "t-login": "Login",
-          "t-signup": "Sign Up"
+          't-welcome': 'DosiThink',
+          't-language-select': 'Select your language:',
+          't-role-select': 'Select Role',
+          't-login': 'Login',
+          't-signup': 'Sign Up',
+          't-my-meds': 'My Medications',
+          't-add-med': 'Add Medication'
         },
         ar: {
-          "t-welcome": "دوسي ثينك",
-          "t-language-select": "اختر لغتك:",
-          "t-role-select": "اختر الدور",
-          "t-login": "تسجيل الدخول",
-          "t-signup": "إنشاء حساب"
+          't-welcome': 'دوسي ثينك',
+          't-language-select': 'اختر لغتك:',
+          't-role-select': 'اختر الدور',
+          't-login': 'تسجيل الدخول',
+          't-signup': 'إنشاء حساب',
+          't-my-meds': 'أدويتي',
+          't-add-med': 'إضافة دواء'
         }
       };
-      const selected = textMap[currentLang];
-      for (let key in selected) {
-        document.getElementById(key).innerText = selected[key];
-      }
-      document.body.dir = currentLang === "ar" ? "rtl" : "ltr";
+      const t = map[currentLang];
+      for (let key in t) document.getElementById(key).innerText = t[key];
+      document.body.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
     }
-
     function addMedication() {
       const name = document.getElementById('medName').value.trim();
-      const time = document.getElementById('medTime').value.trim();
-      if (name && time) {
-        const medDiv = document.createElement('div');
-        medDiv.className = 'medication';
-        medDiv.innerHTML = `<strong>${name}</strong><br>Time: ${time}<br>
-          <button onclick="this.innerText='✅ Taken'">Mark as Taken</button>
-          <button onclick="this.innerText='❌ Missed'">Mark as Missed</button>`;
-        document.getElementById('medication-list').appendChild(medDiv);
-        document.getElementById('medName').value = '';
-        document.getElementById('medTime').value = '';
-      } else {
-        alert("Please fill all fields");
-      }
+      const time = document.getElementById('medTime').value;
+      const daily = document.getElementById('medDaily').checked;
+      if (!name || !time) return alert("Please enter valid data");
+      const med = { name, time, daily };
+      medications.push(med);
+      const medDiv = document.createElement('div');
+      medDiv.className = 'medication';
+      medDiv.innerHTML = `<strong>${name}</strong><br>Time: ${time}<br>
+        <button onclick="this.innerText='✅ Taken'">Mark as Taken</button>
+        <button onclick="this.innerText='❌ Missed'">Mark as Missed</button>`;
+      document.getElementById('medication-list').appendChild(medDiv);
+      document.getElementById('medName').value = '';
+      document.getElementById('medTime').value = '';
+      document.getElementById('medDaily').checked = false;
+    }
+    setInterval(() => {
+      const now = new Date();
+      const hhmm = now.toTimeString().slice(0,5);
+      medications.forEach(m => {
+        if (m.time === hhmm) {
+          const msg = currentLang === 'ar' ? `حان وقت تناول ${m.name}` : `It is time to take ${m.name}`;
+          showNotification(msg);
+          playSound();
+        }
+      });
+    }, 60000);
+    function showNotification(msg) {
+      const n = document.getElementById('notification');
+      n.innerText = msg;
+      n.style.display = 'block';
+      setTimeout(() => n.style.display = 'none', 10000);
+    }
+    function playSound() {
+      const audio = new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg');
+      audio.play();
+    }
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          console.log("Service Worker registered", reg);
+        }).catch(err => console.log("SW registration failed", err));
+      });
     }
   </script>
 </body>
